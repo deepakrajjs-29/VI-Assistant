@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visual Plant & Object Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.4.0/dist/tf.min.js"></script>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap");
+
+      /* Dark techy background with grid */
+      body {
+        background: #0a0e27;
+        background-image: linear-gradient(
+            rgba(14, 165, 233, 0.05) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+        background-size: 50px 50px;
+        font-family: "Rajdhani", sans-serif;
+        color: #e2e8f0;
+        position: relative;
+        min-height: 100vh;
+      }
+
+      /* Animated gradient overlay */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(14, 165, 233, 0.1) 0%,
+          transparent 50%
+        );
+        animation: pulse 4s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* Glowing orbs */
+      body::after {
+        content: "";
+        position: fixed;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(
+          circle,
+          rgba(14, 165, 233, 0.15) 0%,
+          transparent 70%
+        );
+        top: -300px;
+        right: -300px;
+        animation: float 20s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(-100px, 100px);
+        }
+      }
+
+      /* App container */
+      #app {
+        animation: fadeIn 1s ease-out;
+        position: relative;
+        z-index: 1;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Futuristic card design */
+      header,
+      section {
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        padding: 32px;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(148, 163, 184, 0.1),
+          0 0 0 1px rgba(14, 165, 233, 0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Scanning line effect */
+      header::before,
+      section::before {
+        content: "";
+        position: absolute;
+        top: -100%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(14, 165, 233, 0.8),
+          rgba(6, 182, 212, 0.8),
+          transparent
+        );
+        box-shadow: 0 0 10px rgba(14, 165, 233, 0.8);
+        animation: scan 3s ease-in-out infinite;
+      }
+
+      @keyframes scan {
+        0% {
+          top: -100%;
+        }
+        50% {
+          top: 100%;
+        }
+        100% {
+          top: 100%;
+        }
+      }
+
+      header:hover,
+      section:hover {
+        border-color: rgba(14, 165, 233, 0.4);
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(148, 163, 184, 0.15),
+          0 0 0 1px rgba(14, 165, 233, 0.3), 0 0 40px rgba(14, 165, 233, 0.2);
+        transform: translateY(-2px);
+      }
+
+      /* Header styling */
+      header {
+        background: linear-gradient(
+          135deg,
+          rgba(15, 23, 42, 0.95) 0%,
+          rgba(30, 41, 59, 0.9) 100%
+        );
+        border-left: 3px solid #0ea5e9;
+      }
+
+      /* Cyberpunk typography */
+      h1 {
+        font-family: "Orbitron", sans-serif;
+        font-weight: 900;
+        background: linear-gradient(
+          135deg,
+          #0ea5e9 0%,
+          #06b6d4 50%,
+          #0ea5e9 100%
+        );
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shine 3s linear infinite;
+        letter-spacing: 2px;
+        text-shadow: 0 0 30px rgba(14, 165, 233, 0.5);
+        text-transform: uppercase;
+      }
+
+      @keyframes shine {
+        to {
+          background-position: 200% center;
+        }
+      }
+
+      h2 {
+        font-weight: 700;
+        color: #0ea5e9;
+        letter-spacing: -0.3px;
+        position: relative;
+        display: inline-block;
+        text-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+      }
+
+      h2::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, #0ea5e9, transparent);
+        box-shadow: 0 0 10px rgba(14, 165, 233, 0.8);
+      }
+
+      /* Tech file upload */
+      input[type="file"] {
+        background: rgba(15, 23, 42, 0.6);
+        border: 2px solid rgba(14, 165, 233, 0.3);
+        color: #cbd5e1;
+        padding: 20px;
+        border-radius: 12px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      input[type="file"]:hover {
+        border-color: #0ea5e9;
+        background: rgba(14, 165, 233, 0.1);
+        box-shadow: 0 0 20px rgba(14, 165, 233, 0.3),
+          inset 0 0 20px rgba(14, 165, 233, 0.1);
+      }
+
+      /* Holographic image container */
+      #imageContainer {
+        background: rgba(15, 23, 42, 0.6);
+        border: 2px solid rgba(14, 165, 233, 0.3);
+        padding: 20px;
+        border-radius: 12px;
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      #imageContainer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(14, 165, 233, 0.2),
+          transparent
+        );
+        animation: hologram 2s linear infinite;
+      }
+
+      @keyframes hologram {
+        0% {
+          left: -100%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+
+      #imageContainer:hover {
+        border-color: #0ea5e9;
+        box-shadow: 0 0 30px rgba(14, 165, 233, 0.4);
+      }
+
+      #uploadedImage {
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(14, 165, 233, 0.3),
+          0 8px 32px rgba(0, 0, 0, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+        border: 1px solid rgba(14, 165, 233, 0.2);
+      }
+
+      #uploadedImage:hover {
+        box-shadow: 0 0 40px rgba(14, 165, 233, 0.5),
+          0 12px 48px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Data panel results */
+      #results {
+        background: linear-gradient(
+          135deg,
+          rgba(15, 23, 42, 0.8) 0%,
+          rgba(30, 41, 59, 0.6) 100%
+        );
+        border: 2px solid rgba(14, 165, 233, 0.3);
+        color: #cbd5e1;
+        border-radius: 12px;
+        padding: 24px;
+        min-height: 300px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      #results::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(
+          circle,
+          rgba(14, 165, 233, 0.1) 0%,
+          transparent 70%
+        );
+        border-radius: 50%;
+      }
+
+      #results strong {
+        color: #0ea5e9;
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+      }
+
+      /* Futuristic chat window */
+      .chat-window {
+        height: 340px;
+        border: 2px solid rgba(14, 165, 233, 0.3);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        overflow-y: auto;
+        padding: 20px;
+        position: relative;
+      }
+
+      .chat-window::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .chat-window::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.8);
+        border-radius: 10px;
+      }
+
+      .chat-window::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #0ea5e9, #06b6d4);
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+      }
+
+      .chat-window::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #0284c7, #0891b2);
+        box-shadow: 0 0 15px rgba(14, 165, 233, 0.8);
+      }
+
+      /* Message bubbles */
+      .bot-message,
+      .user-message {
+        padding: 14px 18px;
+        border-radius: 12px;
+        margin-bottom: 14px;
+        font-size: 0.9rem;
+        max-width: 75%;
+        line-height: 1.6;
+        clear: both;
+        position: relative;
+        animation: slideIn 0.4s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .bot-message {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(14, 165, 233, 0.3);
+        color: #e2e8f0;
+        float: left;
+        box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+      }
+
+      .bot-message::before {
+        content: "⚡";
+        position: absolute;
+        left: -28px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2rem;
+        filter: drop-shadow(0 0 5px rgba(14, 165, 233, 0.8));
+      }
+
+      .user-message {
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        border: 1px solid rgba(14, 165, 233, 0.5);
+        color: #ffffff;
+        float: right;
+        box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+      }
+
+      /* Cyber input */
+      #chatInput {
+        background: rgba(15, 23, 42, 0.8);
+        padding: 14px 18px;
+        border: 2px solid rgba(14, 165, 233, 0.3);
+        border-radius: 12px;
+        color: #e2e8f0;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+      }
+
+      #chatInput:focus {
+        outline: none;
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1),
+          0 0 20px rgba(14, 165, 233, 0.3),
+          inset 0 0 20px rgba(14, 165, 233, 0.05);
+        background: rgba(30, 41, 59, 0.8);
+      }
+
+      #chatInput::placeholder {
+        color: #64748b;
+      }
+
+      /* Neon button */
+      #sendMessage {
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        color: #ffffff;
+        font-weight: 600;
+        padding: 14px 28px;
+        border-radius: 12px;
+        border: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-size: 0.9rem;
+        box-shadow: 0 0 20px rgba(14, 165, 233, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      #sendMessage::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      #sendMessage:hover::before {
+        left: 100%;
+      }
+
+      #sendMessage:hover {
+        background: linear-gradient(135deg, #0284c7 0%, #0891b2 100%);
+        box-shadow: 0 0 30px rgba(14, 165, 233, 0.8),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+
+      #sendMessage:active {
+        transform: translateY(0);
+      }
+
+      /* Spacing */
+      .space-y-8 > * + * {
+        margin-top: 2rem;
+      }
+
+      /* Responsive */
+      @media (max-width: 640px) {
+        header,
+        section {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        h2 {
+          font-size: 1.25rem;
+        }
+
+        .bot-message::before {
+          display: none;
+        }
+
+        .bot-message,
+        .user-message {
+          max-width: 85%;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen font-sans p-4 sm:p-8">
+    <div id="app" class="max-w-4xl mx-auto space-y-8">
+      <header>
+        <h1 class="text-3xl font-bold flex items-center gap-2">
+          🌿 Visual Lens & Smart Assistant
+        </h1>
+        <p class="mt-2 text-slate-400">
+          Lightweight, browser-based tool for object identification and plant
+          care advice.
+        </p>
+      </header>
+
+      <!-- ----------------------- Image Analyzer Section ----------------------- -->
+      <section id="visual-assistant">
+        <h2 class="text-2xl font-semibold mb-8">📸 Image Analyzer</h2>
+        <input type="file" id="imageUpload" accept="image/*" />
+
+        <div class="mt-6 flex flex-col sm:flex-row gap-6">
+          <!-- Image Display Area -->
+          <div id="imageContainer" class="w-full sm:w-1/2">
+            <img
+              id="uploadedImage"
+              src="https://placehold.co/400x300/0f172a/0ea5e9?text=Upload+Image"
+              alt="Uploaded Image"
+              class="max-w-full max-h-64"
+              style="display: block"
+            />
+          </div>
+
+          <!-- Results Area -->
+          <div id="results" class="w-full sm:w-1/2" style="color: #0a0e27">
+            <p><strong>Loading ML Models...</strong> Please wait.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ----------------------- Chatbot Section ----------------------- -->
+      <section id="chatbot-assistant">
+        <h2 class="text-2xl font-semibold mb-8">🤖 Smart Plant Chatbot</h2>
+        <div id="chatWindow" class="chat-window mb-4">
+          <p class="bot-message">
+            Hello! I can answer questions about plant care, object details, or
+            general knowledge.
+          </p>
+        </div>
+        <div class="chat-input-container flex gap-3">
+          <input
+            type="text"
+            id="chatInput"
+            placeholder="e.g., What are the symptoms of powdery mildew?"
+            class="flex-grow"
+          />
+          <button id="sendMessage">Send</button>
+        </div>
+      </section>
+    </div>
+    <!-- ----------------------- JAVASCRIPT LOGIC ----------------------- -->
+    <script>
+      // --- GLOBAL VARIABLES & CONFIGURATION ---
+      let generalObjectModel = null;
+      let lastUploadedImageBase64 = null; // Stores image for analysis by LLM
+      const IMAGE_SIZE = 224;
+
+      // =========================================================================================
+      // !!! API CONFIGURATION: PASTE YOUR GEMINI API KEY HERE !!!
+      // WARNING: This key will be public on GitHub. Create a new key just for this project.
+      const USER_PROVIDED_GEMINI_API_KEY =
+        "AIzaSyB8lWR0TK-vW2zvn2GfpJJtitaCpnYBuu8"; // <-- REPLACE "" with YOUR ACTUAL KEY (e.g., "AIza...")
+      // =========================================================================================
+
+      const GEMINI_API_KEY = USER_PROVIDED_GEMINI_API_KEY; // Use the user's key
+      const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+      const analysisPrompt =
+        "Analyze this image. If it's a plant, identify the plant species, list any visible diseases or issues, and provide three concise care tips. If it is a non-plant object, identify it clearly. Format the output as simple, clear paragraphs.";
+      const systemPrompt =
+        "You are a helpful and simple plant care and object information assistant. Keep answers concise and friendly, similar to a knowledgeable expert giving quick tips.";
+
+      // The MobileNetV1 model URL (kept for general object analysis if needed)
+      const MOBILENET_URL =
+        "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_1.0_224/model.json";
+      const resultsDiv = document.getElementById("results");
+
+      // --- 1. Model Loading (for local check) ---
+      async function loadModels() {
+        try {
+          // Load TensorFlow model for quick client-side classification
+          generalObjectModel = await tf.loadLayersModel(MOBILENET_URL);
+
+          resultsDiv.innerHTML = `
+                    <h3 class="text-lg font-bold text-emerald-800">Models Loaded!</h3>
+                    <p class="text-sm text-emerald-700">Ready for general object identification (MobileNet V1). 
+                    <br>Upload an image to use the advanced  Vision model for detailed plant analysis.</p>
+                `;
+        } catch (error) {
+          console.error("Error loading models:", error);
+          resultsDiv.innerHTML = `
+                    <h3 class="text-lg font-bold text-red-700"> ML Model Error!!!!</h3>
+                    <p class="text-sm text-red-600">Could not load TensorFlow.js model. Check console for details.</p>`;
+        }
+      }
+
+      // --- Utility to convert data URL to base64 and MIME type ---
+      function dataURLtoMime(dataurl) {
+        const arr = dataurl.split(",");
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const data = arr[1];
+        return { mime, data };
+      }
+
+      // --- 2. Image Analysis Core Logic (Using Gemini Vision) ---
+      async function analyzeImage(imageElement) {
+        if (!lastUploadedImageBase64) {
+          resultsDiv.innerHTML = `<p class="text-orange-700">Please upload an image first.</p>`;
+          return;
+        }
+        if (!GEMINI_API_KEY) {
+          resultsDiv.innerHTML = `<p class="text-red-700 font-bold">🚨 API KEY REQUIRED 🚨</p><p class="text-red-600 text-sm">Please insert your  API key in the script to enable vision analysis.</p>`;
+          return;
+        }
+
+        resultsDiv.innerHTML =
+          '<p class="text-blue-700 flex items-center"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Analyzing Image with Smart Vision...</p>';
+
+        // Prepare image data for API
+        const { mime, data } = dataURLtoMime(lastUploadedImageBase64);
+
+        try {
+          const payload = {
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { text: analysisPrompt }, // The analysis prompt
+                  { inlineData: { mimeType: mime, data: data } }, // The image data
+                ],
+              },
+            ],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+          };
+
+          const response = await fetch(GEMINI_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP Error ${response.status}`);
+          }
+
+          const result = await response.json();
+          const generatedText =
+            result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (generatedText) {
+            // Convert paragraphs to a nicely formatted HTML list of results
+            const paragraphs = generatedText
+              .split("\n\n")
+              .filter((p) => p.trim() !== "");
+            let htmlOutput =
+              '<h3 class="text-lg font-bold text-gray-700">✅ Smart Vision Analysis</h3><div class="space-y-3 mt-2">';
+
+            paragraphs.forEach((p) => {
+              // Simple heuristic to highlight key sections
+              let formattedP = p.replace(
+                /(Plant Species|Object|Diseases|Care Tips|Issue):/g,
+                "<strong>$1:</strong>"
+              );
+              htmlOutput += `<p class="text-sm bg-white p-2 rounded">${formattedP}</p>`;
+            });
+
+            htmlOutput += "</div>";
+            resultsDiv.innerHTML = htmlOutput;
+          } else {
+            resultsDiv.innerHTML =
+              '<p class="text-red-600">The AI vision model returned no clear analysis. Please try a clearer image.</p>';
+          }
+        } catch (error) {
+          console.error("Your Vision API Fetch Error:", error);
+          resultsDiv.innerHTML = `<p class="text-red-600">Analysis failed: Could not connect to the vision service. Check network/console.</p>`;
+        }
+      }
+
+      // --- Dummy functions for MobileNet (kept for initial load check) ---
+      async function getTopKClasses(predictions, k) {
+        const mockLabels = [
+          "Daisy flower",
+          "Monstera plant",
+          "Tomato leaf",
+          "Apple",
+          "Laptop computer",
+          "Desk chair",
+          "Cat",
+          "Banana",
+          "Soccer ball",
+          "Vase",
+        ];
+        const { values, indices } = tf.topk(predictions, k);
+        const topKValues = await values.data();
+        const topKIndices = await indices.data();
+        return Array.from(topKValues).map((value, i) => ({
+          className: mockLabels[topKIndices[i] % mockLabels.length],
+          probability: value,
+        }));
+      }
+      function getSimulatedPlantResults(generalName) {
+        /* Dummy implementation not used in final analysis */ return {
+          plantName: "N/A",
+          disease: "N/A",
+          care: ["N/A"],
+        };
+      }
+
+      // --- 3. Event Listeners and Setup ---
+      document.addEventListener("DOMContentLoaded", () => {
+        loadModels();
+
+        const imageUpload = document.getElementById("imageUpload");
+        const uploadedImage = document.getElementById("uploadedImage");
+
+        imageUpload.addEventListener("change", (event) => {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              uploadedImage.src = e.target.result;
+              lastUploadedImageBase64 = e.target.result; // Store base64 data
+              uploadedImage.onload = () => analyzeImage(uploadedImage); // Trigger analysis after load
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+
+        // --- 4. Chatbot Logic (Using Gemini API) ---
+        const chatInput = document.getElementById("chatInput");
+        const sendMessageButton = document.getElementById("sendMessage");
+        const chatWindow = document.getElementById("chatWindow");
+
+        sendMessageButton.addEventListener("click", () => sendChat());
+        chatInput.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            sendChat();
+          }
+        });
+
+        async function sendChat() {
+          const userMessage = chatInput.value.trim();
+          if (!userMessage) return;
+
+          if (!GEMINI_API_KEY) {
+            const loadingMsg = document.getElementById("loading-msg");
+            if (loadingMsg) loadingMsg.remove();
+            chatWindow.innerHTML += `<p class="bot-message bg-red-100 text-red-800">
+                        Chatbot Disabled: Please insert your  API key in the script to use the chatbot.
+                    </p>`;
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return;
+          }
+
+          // Display user message
+          const userHTML = `<p class="user-message">${userMessage}</p>`;
+          chatWindow.innerHTML += userHTML;
+          chatInput.value = "";
+          chatWindow.scrollTop = chatWindow.scrollHeight;
+
+          // Display loading message
+          const loadingHTML = `<p class="bot-message text-gray-500 flex items-center" id="loading-msg"><svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>... consulting AI ...</p>`;
+          chatWindow.innerHTML += loadingHTML;
+          chatWindow.scrollTop = chatWindow.scrollHeight;
+
+          let botResponseText =
+            "Connection Failed. Please try again or check your network.";
+          let success = false;
+
+          try {
+            const payload = {
+              contents: [{ parts: [{ text: userMessage }] }],
+              systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            const response = await fetch(GEMINI_API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP Error ${response.status}`);
+            }
+
+            const result = await response.json();
+            const generatedText =
+              result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (generatedText) {
+              botResponseText = generatedText;
+              success = true;
+            } else {
+              botResponseText =
+                "The AI model returned no output. Try rephrasing the question.";
+            }
+          } catch (error) {
+            console.error("Your API Fetch Error:", error);
+            // Leave the default failure message
+          }
+
+          // Remove loading message
+          const loadingMsg = document.getElementById("loading-msg");
+          if (loadingMsg) loadingMsg.remove();
+
+          // Display final response
+          const messageClass = success
+            ? "bot-message"
+            : "bot-message bg-red-100 text-red-800";
+          const botHTML = `<p class="${messageClass}">${botResponseText}</p>`;
+          chatWindow.innerHTML += botHTML;
+          chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+      });
+    </script>
+  </body>
+</html>
