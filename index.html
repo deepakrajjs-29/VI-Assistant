@@ -474,85 +474,117 @@
         </div>
     </div>
 
-    <script>
-        function switchForm(formType) {
+   <script>
+    // Switch between Sign In and Sign Up forms
+    function switchForm(formType) {
+        const signinForm = document.getElementById('signinForm');
+        const signupForm = document.getElementById('signupForm');
+
+        if (formType === 'signup') {
+            signinForm.classList.remove('active');
+            signupForm.classList.add('active');
+        } else {
+            signupForm.classList.remove('active');
+            signinForm.classList.add('active');
+        }
+    }
+
+    // Show / Hide Password
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            button.textContent = '👁️';
+        }
+    }
+
+    // Handle Sign In
+    function handleSignIn() {
+        const email = document.getElementById('signinEmail').value.trim();
+        const password = document.getElementById('signinPassword').value.trim();
+
+        if (!email || !password) {
+            alert('Please fill in all fields!');
+            return;
+        }
+
+        const storedUser = JSON.parse(localStorage.getItem(email));
+
+        if (!storedUser) {
+            alert('No account found with this email. Please sign up first.');
+            return;
+        }
+
+        if (storedUser.password !== password) {
+            alert('Incorrect password!');
+            return;
+        }
+
+        // Store session (optional)
+        localStorage.setItem('currentUser', email);
+
+        alert(`Welcome back, ${storedUser.name}!`);
+        window.location.href = "main.html";
+    }
+
+    // Handle Sign Up
+    function handleSignUp() {
+        const name = document.getElementById('signupName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value.trim();
+        const confirmPassword = document.getElementById('signupConfirmPassword').value.trim();
+        const agreeTerms = document.getElementById('agreeTerms').checked;
+
+        if (!name || !email || !password || !confirmPassword) {
+            alert('Please fill in all fields!');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            alert('Passwords do not match!');
+            return;
+        }
+
+        if (!agreeTerms) {
+            alert('Please agree to the Terms & Conditions!');
+            return;
+        }
+
+        // Check if the email is already registered
+        const existingUser = localStorage.getItem(email);
+        if (existingUser) {
+            alert('This email is already registered. Please sign in instead.');
+            switchForm('signin');
+            return;
+        }
+
+        // Save new user
+        const userData = { name, email, password };
+        localStorage.setItem(email, JSON.stringify(userData));
+
+        alert(`Account created successfully! Welcome, ${name}!`);
+
+        // Store current user and redirect
+        localStorage.setItem('currentUser', email);
+        window.location.href = "main.html";
+    }
+
+    // Handle Enter key
+    document.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
             const signinForm = document.getElementById('signinForm');
-            const signupForm = document.getElementById('signupForm');
-
-            if (formType === 'signup') {
-                signinForm.classList.remove('active');
-                signupForm.classList.add('active');
+            if (signinForm.classList.contains('active')) {
+                handleSignIn();
             } else {
-                signupForm.classList.remove('active');
-                signinForm.classList.add('active');
+                handleSignUp();
             }
         }
-
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const button = input.nextElementSibling;
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                button.textContent = '🙈';
-            } else {
-                input.type = 'password';
-                button.textContent = '👁️';
-            }
-        }
-
-        function handleSignIn() {
-            const email = document.getElementById('signinEmail').value;
-            const password = document.getElementById('signinPassword').value;
-
-            if (!email || !password) {
-                alert('Please fill in all fields!');
-                return;
-            }
-
-            // Simulate sign in
-            alert(`Welcome back! Signing in as ${email}`);
-            // Add your authentication logic here
-        }
-
-        function handleSignUp() {
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const confirmPassword = document.getElementById('signupConfirmPassword').value;
-            const agreeTerms = document.getElementById('agreeTerms').checked;
-
-            if (!name || !email || !password || !confirmPassword) {
-                alert('Please fill in all fields!');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-
-            if (!agreeTerms) {
-                alert('Please agree to the Terms & Conditions!');
-                return;
-            }
-
-            // Simulate sign up
-            alert(`Account created successfully! Welcome, ${name}!`);
-            // Add your registration logic here
-        }
-
-        // Handle Enter key
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const signinForm = document.getElementById('signinForm');
-                if (signinForm.classList.contains('active')) {
-                    handleSignIn();
-                } else {
-                    handleSignUp();
-                }
-            }
-        });
-    </script>
+    });
+</script>
 </body>
 </html>
